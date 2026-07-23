@@ -1,0 +1,6 @@
+{
+  "name": "Hindi Application & Letter Writer",
+  "description": "An AI-powered Hindi application and letter builder for government, bank, school, and office correspondence with mobile-first design, live A4 preview, Gemini AI assistance, and PDF/Word export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
