@@ -3,10 +3,32 @@ import jsPDF from 'jspdf';
 import { saveAs } from 'file-saver';
 import { Document, Paragraph, TextRun, AlignmentType, Packer } from 'docx';
 
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { saveAs } from 'file-saver';
+import { Document, Paragraph, TextRun, AlignmentType, Packer } from 'docx';
+
 /**
  * Generate a clean, high-resolution PDF from the A4 letter element.
  * Works seamlessly across Browsers and Mobile / Capacitor web views.
  */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      const data = reader.result as string;
+      resolve(data.split(",")[1]);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+}
 export async function exportToPDF(
   elementId: string,
   filename: string,
@@ -130,11 +152,35 @@ export async function exportToPDF(
       heightLeft -= pdfHeight;
     }
 
-    const cleanName = (filename || 'हिंदी_पत्र').replace(/[/\\?%*:|"<>]/g, '_');
-    const pdfBlob = pdf.output('blob');
-    saveAs(pdfBlob, `${cleanName}.pdf`);
-    onProgress?.('PDF डाउनलोड हो गया!');
-    return true;
+const cleanName = (filename || 'हिंदी_पत्र').replace(/[/\\?%*:|"<>]/g, '_');
+
+const pdfBlob = pdf.output('blob');
+
+if (Capacitor.isNativePlatform()) {
+
+  const base64 = await blobToBase64(pdfBlob);
+
+  const result = await Filesystem.writeFile({
+    path: `${cleanName}.pdf`,
+    data: base64,
+    directory: Directory.Documents
+  });
+
+  await Share.share({
+    title: cleanName,
+    text: 'Generated PDF',
+    url: result.uri
+  });
+
+  onProgress?.('PDF तैयार हो गई।');
+} else {
+
+  saveAs(pdfBlob, `${cleanName}.pdf`);
+
+  onProgress?.('PDF डाउनलोड हो गया!');
+}
+
+return true;
   } catch (error) {
     console.error('PDF Export Error:', error);
     // Fallback to print dialog if canvas rendering fails
